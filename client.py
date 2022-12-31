@@ -4,10 +4,12 @@ import argparse
 
 ap = argparse.ArgumentParser()
 
-ap.add_argument('-i', '--image', type=str, default='/media/ankit/ampkit/metric_space/xxx/1.tiff',
+ap.add_argument('-i', '--image', type=str, default='/media/ankit/ampkit/metric_space/xxx/fault/b1.tiff',
 				help='path to the image')
 
-filename = '/media/ankit/ampkit/metric_space/xxx/fault/b1.tiff'
+args = ap.parse_args()
+
+filename = args.image #'/media/ankit/ampkit/metric_space/xxx/fault/b1.tiff'
 files = {'my_file': (filename, open(filename, 'rb'))}
 json = {'first': "Hello", 'second': "World"}
 

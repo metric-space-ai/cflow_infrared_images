@@ -56,7 +56,7 @@ def concat_result_top_down(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
-inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'results/cflow/folder/weights/model-v1_copy.ckpt')
+inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'results/cflow/folder/weights/precon_heatmap.ckpt')
 
 # Code from: https://fastapi.tiangolo.com/tutorial/request-files/
 app = FastAPI()
