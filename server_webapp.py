@@ -1,32 +1,29 @@
+# app.py
 from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 import os
 import time
 
 import aiofiles
 import uvicorn
 
+import io
 import numpy as np
 from pathlib import Path
-
+from typing import List
 from PIL import Image
 
 from heat_anomaly.deploy import Inferencer
 from importlib import import_module
-from typing import Optional
+from typing import Optional, Tuple
 
 from heat_anomaly.config import get_configurable_parameters
 
-
-app = FastAPI()
-IMAGEDIR = '/home/nvidia/Documents/precon_web_folder/'
-
-config = get_configurable_parameters(config_path='./heat_anomaly/models/cflow/ir_image.yaml')
+IMAGEDIR    = '/home/nvidia/Documents/precon_web_folder/'
+config      = get_configurable_parameters(config_path='./heat_anomaly/models/cflow/ir_image.yaml')
 # definintion to load the model
 def get_inferencer(config_path: Path, weight_path: Path, meta_data_path: Optional[Path] = None) -> Inferencer:
 
-    # Get the inferencer. We use .ckpt extension for Torch models and (onnx, bin)
-    # for the openvino models.
     inferencer: Inferencer
     module = import_module("heat_anomaly.deploy")
     torch_inferencer = getattr(module, "TorchInferencer")
@@ -58,12 +55,14 @@ def concat_result_top_down(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
+
 inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'results/cflow/folder/weights/precon_heatmap.ckpt')
 
+app = FastAPI()
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),
         		first: str = Form(...),
-        		second: str = Form("default value for second"),
+        		second: str = Form("default value  for second"),
 			):
     file_text = os.path.basename(my_file.filename)
     async with aiofiles.open(f"{IMAGEDIR}{file_text}", 'wb') as out_file:
@@ -87,7 +86,62 @@ async def _file_upload( my_file: UploadFile = File(...),
     response_file = 'sample_output.png'
     print(f'elapsed time -> {time.time()-st}')
 
-    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'))
+    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'), headers={"message": "result=n.i.O."})
+
+@app.post("/uploadfiles/")
+async def create_upload_files(files: List[UploadFile] = File(...)):
+    """ Create API endpoint to send image to and specify
+     what type of file it'll take
+
+    :param files: Get image files, defaults to File(...)
+    :type files: List[UploadFile], optional
+    :return: A list of png images
+    :rtype: list(bytes)
+    """
+    file_name = files[0].filename
+    print(file_name)
+
+    async with aiofiles.open(f"{IMAGEDIR}{file_name}", 'wb') as out_file:
+        content = await files[0].read()  # async read
+        await out_file.write(content)  # async write
+
+    st = time.time()
+    h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_name}')
+    print('preprocessing done')
+    
+    predictions1 = inferencer.predict(image=h1)
+    predictions2 = inferencer.predict(image=h2)
+    
+    print('predictions generated')
+    res_image1 = concat_result(Image.fromarray(predictions1.segmentations).resize(dims[0]), Image.fromarray(predictions2.segmentations).resize(dims[0]))
+    res_image2 = concat_result(Image.fromarray(predictions1.heat_map).resize(dims[0]), Image.fromarray(predictions2.heat_map).resize(dims[0]))
+    res_image = concat_result_top_down(res_image1, res_image2)
+    
+    print('heated regions merged')
+    res_image.save('sample_output.png')
+    print(f'elapsed time -> {time.time()-st}')
+
+    output_image = 'sample_output.png' 
+    image = open(output_image, "rb").read()    
+    return StreamingResponse(io.BytesIO(image),media_type="image/png",headers={"message": "result=n.i.O."})
+
+@app.get("/")
+async def main():
+    """Create a basic home page to upload a file
+
+    :return: HTML for homepage
+    :rtype: HTMLResponse
+    """
+
+    content = """<body>
+          <h3>Upload an IR Tiff image to do an anomaly detection</h3>
+          <form action="/uploadfiles" enctype="multipart/form-data" method="post">
+              <input name="files" type="file" multiple>
+              <input type="submit">
+          </form>
+      </body>
+      """
+    return HTMLResponse(content=content, headers={"message": "result=n.i.O."})
 
 # uvicorn.run(app, host="192.168.8.113", port=8000)
 uvicorn.run(app, port=8000)

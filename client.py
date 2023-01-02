@@ -4,12 +4,12 @@ import argparse
 
 ap = argparse.ArgumentParser()
 
-ap.add_argument('-i', '--image', type=str, default='/media/ankit/ampkit/metric_space/xxx/fault/b1.tiff',
+ap.add_argument('-i', '--image', required=True,
 				help='path to the image')
 
 args = ap.parse_args()
 
-filename = args.image #'/media/ankit/ampkit/metric_space/xxx/fault/b1.tiff'
+filename = args.image
 files = {'my_file': (filename, open(filename, 'rb'))}
 json = {'first': "Hello", 'second': "World"}
 
@@ -19,7 +19,7 @@ response = requests.post(
     files=files,
     data={'first': "Hello", 'second': "World"}
 )
-path = '/home/ankit/Downloads'
+path = '/home/nvidia/Downloads'
 
 if response.status_code == 200:
 	print('Yeah')
