@@ -58,6 +58,21 @@ def concat_result_top_down(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
+def fill_buffer():
+    temp_image = np.zeros((2048,1024,3), np.uint8)
+    temp_image = Image.fromarray(temp_image)
+
+    w,h = temp_image.size
+    h1 = temp_image.crop((0,0,w//2,h))
+    h2 = temp_image.crop((w//2,0,w,h))
+    print('preprocessing done')
+    
+    predictions1 = inferencer.predict(image=np.array(h1))
+    predictions2 = inferencer.predict(image=np.array(h2))
+
+    return True
+	
+
 inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'results/cflow/folder/weights/precon_heatmap.ckpt')
 
 @app.post("/file")
@@ -89,5 +104,7 @@ async def _file_upload( my_file: UploadFile = File(...),
 
     return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'))
 
-# uvicorn.run(app, host="192.168.8.113", port=8000)
-uvicorn.run(app, port=8000)
+fill_buffer()
+
+uvicorn.run(app, host="192.168.8.113", port=8000)
+# uvicorn.run(app, port=8000)
