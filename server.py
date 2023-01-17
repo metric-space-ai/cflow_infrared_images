@@ -67,8 +67,8 @@ def fill_buffer():
     h2 = temp_image.crop((w//2,0,w,h))
     print('preprocessing done')
     
-    predictions1 = inferencer.predict(image=np.array(h1))
-    predictions2 = inferencer.predict(image=np.array(h2))
+    inferencer.predict(image=np.array(h1))
+    inferencer.predict(image=np.array(h2))
 
     return True
 	
@@ -91,6 +91,17 @@ async def _file_upload( my_file: UploadFile = File(...),
     
     predictions1 = inferencer.predict(image=h1)
     predictions2 = inferencer.predict(image=h2)
+
+    # checking if anomaly exists
+    # -----------------------------
+    anomaly1, anomaly2 = predictions1.pred_mask, predictions2.pred_mask
+    is_anomalous_left, is_anomalous_right = False, False
+
+    if anomaly1.max() > 0:
+        is_anomalous_left = True
+    if anomaly2.max() > 0:
+        is_anomalous_right = True
+    print(f"message: anomalous:{bool(is_anomalous_left + is_anomalous_right)})")
     
     print('predictions generated')
     res_image1  = concat_result(Image.fromarray(predictions1.segmentations).resize(dims[0]), Image.fromarray(predictions2.segmentations).resize(dims[0]))

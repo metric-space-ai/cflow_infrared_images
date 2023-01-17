@@ -19,7 +19,11 @@ from typing import Optional, Tuple
 
 from heat_anomaly.config import get_configurable_parameters
 
-IMAGEDIR    = '/home/nvidia/Documents/precon_web_folder/'
+IMAGEDIR    = 'precon_web_folder/'
+try:
+    os.makedirs(IMAGEDIR)
+except:
+    pass
 config      = get_configurable_parameters(config_path='./heat_anomaly/models/cflow/ir_image.yaml')
 # definintion to load the model
 def get_inferencer(config_path: Path, weight_path: Path, meta_data_path: Optional[Path] = None) -> Inferencer:
@@ -77,6 +81,19 @@ async def _file_upload( my_file: UploadFile = File(...),
     predictions2 = inferencer.predict(image=h2)
     
     print('predictions generated')
+
+    # checking if anomaly exists
+    # -----------------------------
+    anomaly1, anomaly2 = predictions1.pred_mask, predictions2.pred_mask
+    is_anomalous_left, is_anomalous_right = False, False
+
+    if anomaly1.max() > 0:
+        is_anomalous_left = True
+    if anomaly2.max() > 0:
+        is_anomalous_right = True
+    
+    print(f"message: anomalous={bool(is_anomalous_left+is_anomalous_right)})")
+
     res_image1  = concat_result(Image.fromarray(predictions1.segmentations).resize(dims[0]), Image.fromarray(predictions2.segmentations).resize(dims[0]))
     res_image2  = concat_result(Image.fromarray(predictions1.heat_map).resize(dims[0]), Image.fromarray(predictions2.heat_map).resize(dims[0]))
     res_image   = concat_result_top_down(res_image1, res_image2)
@@ -86,7 +103,7 @@ async def _file_upload( my_file: UploadFile = File(...),
     response_file = 'sample_output.png'
     print(f'elapsed time -> {time.time()-st}')
 
-    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'), headers={"message": "result=n.i.O."})
+    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'), headers={"message": f"anomaly={bool(is_anomalous_left+is_anomalous_right)}"})
 
 def fill_buffer():
     temp_image = np.zeros((2048,1024,3), np.uint8)
@@ -97,8 +114,8 @@ def fill_buffer():
     h2 = temp_image.crop((w//2,0,w,h))
     print('preprocessing done')
     
-    predictions1 = inferencer.predict(image=np.array(h1))
-    predictions2 = inferencer.predict(image=np.array(h2))
+    inferencer.predict(image=np.array(h1))
+    inferencer.predict(image=np.array(h2))
 
     return True
 
@@ -125,8 +142,20 @@ async def create_upload_files(files: List[UploadFile] = File(...)):
     
     predictions1 = inferencer.predict(image=h1)
     predictions2 = inferencer.predict(image=h2)
-    
+
     print('predictions generated')
+
+    # checking if anomaly exists
+    # -----------------------------
+    anomaly1, anomaly2 = predictions1.pred_mask, predictions2.pred_mask
+    is_anomalous_left, is_anomalous_right = False, False
+
+    if anomaly1.max() > 0:
+        is_anomalous_left = True
+    if anomaly2.max() > 0:
+        is_anomalous_right = True
+    print(f"message: anomalous:{bool(is_anomalous_left + is_anomalous_right)})")
+
     res_image1 = concat_result(Image.fromarray(predictions1.segmentations).resize(dims[0]), Image.fromarray(predictions2.segmentations).resize(dims[0]))
     res_image2 = concat_result(Image.fromarray(predictions1.heat_map).resize(dims[0]), Image.fromarray(predictions2.heat_map).resize(dims[0]))
     res_image = concat_result_top_down(res_image1, res_image2)
@@ -137,7 +166,7 @@ async def create_upload_files(files: List[UploadFile] = File(...)):
 
     output_image = 'sample_output.png' 
     image = open(output_image, "rb").read()    
-    return StreamingResponse(io.BytesIO(image),media_type="image/png",headers={"message": "result=n.i.O."})
+    return StreamingResponse(io.BytesIO(image),media_type="image/png",headers={"message": f"anomalous={bool(is_anomalous_left+is_anomalous_right)}"})
 
 @app.get("/")
 async def main():
@@ -155,8 +184,8 @@ async def main():
           </form>
       </body>
       """
-    return HTMLResponse(content=content, headers={"message": "result=n.i.O."})
+    return HTMLResponse(content=content, headers={"message": f"anomalous={bool(False)}"})
 
 fill_buffer()
-uvicorn.run(app, host="192.168.8.113", port=8000)
-# uvicorn.run(app, port=8000)
+# uvicorn.run(app, host="192.168.8.113", port=8000)
+uvicorn.run(app, port=8000)

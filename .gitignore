@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 results/
+precon_web_folder/
 # C extensions
 *.so
 *.png
