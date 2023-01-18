@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse
 import os
 import time
+import cv2
 
 import aiofiles
 import uvicorn
@@ -19,7 +20,11 @@ from heat_anomaly.config import get_configurable_parameters
 
 
 app = FastAPI()
-IMAGEDIR = '/home/nvidia/Documents/precon_web_folder/'
+IMAGEDIR    = 'precon_web_folder/'
+try:
+    os.makedirs(IMAGEDIR)
+except:
+    pass
 
 config = get_configurable_parameters(config_path='./heat_anomaly/models/cflow/ir_image.yaml')
 # definintion to load the model
@@ -33,6 +38,51 @@ def get_inferencer(config_path: Path, weight_path: Path, meta_data_path: Optiona
     inferencer = torch_inferencer(config=config_path, model_source=weight_path, meta_data_path=meta_data_path)
 
     return inferencer
+
+def get_heated_region(filepath):
+    '''
+    
+    Parameters
+    ----------
+    filepath : image file with .tif extension 
+        DESCRIPTION.
+    Returns
+    -------
+    boxed_region : the corners to get the accurate region
+        DESCRIPTION.
+        
+    '''
+    # opening image and grayscale conversion
+    # --------------------
+    im = Image.open(filepath) # open the image file
+    im.seek(0) # getting the IR image
+    imL = im.convert('L') # grayscale conversion
+
+    # mask the image
+    # ----------------
+    image = np.array(imL)
+    mask = (image > image.mean()).astype(np.uint8)*255
+
+    #dilate the mask
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7,7))
+    mask = cv2.dilate(mask, kernel, iterations=2)
+
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)[:2]
+
+    heated_region = []
+    dim_hr = []
+    for count_cnt, cnt in enumerate(contours):
+        x,y,w,h = cv2.boundingRect(cnt)
+        dim_hr.append((w,h))
+
+        cropped_region = im.crop((x,y, x+w, y+h))
+        cropped_region = cropped_region.resize((256, 256), Image.Resampling.LANCZOS)
+        heated_region.append(cropped_region)
+
+    return np.array(heated_region[0]), np.array(heated_region[1]), dim_hr
+
+
 
 def crop_2_halves(filepath):
 	im = Image.open(filepath) # open the image file
@@ -59,8 +109,7 @@ def concat_result_top_down(im1, im2):
     return dst
 
 def fill_buffer():
-    temp_image = np.zeros((2048,1024,3), np.uint8)
-    temp_image = Image.fromarray(temp_image)
+    temp_image = Image.open('cache_input.tiff')
 
     w,h = temp_image.size
     h1 = temp_image.crop((0,0,w//2,h))
@@ -72,8 +121,11 @@ def fill_buffer():
 
     return True
 	
+# file_model = '/media/nvidia/ampkit/metric_space/anomalib/results/cflow/folder_old/weights/model-v1.ckpt'
+file_model = 'results/cflow/folder/weights/precon_heatmap_v2.ckpt'
+inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', file_model)
 
-inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'results/cflow/folder/weights/precon_heatmap.ckpt')
+
 
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),
@@ -86,10 +138,12 @@ async def _file_upload( my_file: UploadFile = File(...),
         await out_file.write(content)  # async write
     
     print(f'{file_text}')
-    print(f'program_type:{programmNr}')
+    # print(f'program_type:{programmNr}')
 
     st = time.time()
-    h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_text}')
+    # h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_text}')
+
+    h1,h2, dims = get_heated_region(f'{IMAGEDIR}{file_text}')
     print('preprocessing done')
     
     predictions1 = inferencer.predict(image=h1)
@@ -104,7 +158,7 @@ async def _file_upload( my_file: UploadFile = File(...),
         is_anomalous_left = True
     if anomaly2.max() > 0:
         is_anomalous_right = True
-    print(f"message: anomalous:{bool(is_anomalous_left + is_anomalous_right)})")
+    print(f"message: anomalous:{bool(is_anomalous_left + is_anomalous_right)}")
     
     print('predictions generated')
     res_image1  = concat_result(Image.fromarray(predictions1.segmentations).resize(dims[0]), Image.fromarray(predictions2.segmentations).resize(dims[0]))
@@ -120,5 +174,5 @@ async def _file_upload( my_file: UploadFile = File(...),
 
 fill_buffer()
 
-uvicorn.run(app, host="192.168.60.1", port=8000)
-# uvicorn.run(app, port=8000)
+# uvicorn.run(app, host="192.168.5.135", port=8000)
+uvicorn.run(app, port=8000)

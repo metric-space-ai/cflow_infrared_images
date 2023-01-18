@@ -14,12 +14,12 @@ files = {'my_file': (filename, open(filename, 'rb'))}
 json = {'first': "Hello", 'second': "World"}
 
 response = requests.post(
-    'http://192.168.8.113:8000/file',
-	# 'http://127.0.0.1:8000/file',
+    # 'http://192.168.8.113:8000/file',
+	'http://127.0.0.1:8000/file',
     files=files,
-    data={'first': "Hello", 'second': "World"}
+    data={'programmNr': "Hello", 'second': "World"}
 )
-path = '/home/nvidia/Downloads'
+path = '/home/nvidia/Documents/precon/precon_web_folder'
 
 if response.status_code == 200:
 	print('Yeah')
