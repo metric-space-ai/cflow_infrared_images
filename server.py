@@ -77,7 +77,7 @@ inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', 'result
 
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),
-        		first: str = Form(...),
+                programmNr: str = Form(...),
         		second: str = Form("default value for second"),
 			):
     file_text = os.path.basename(my_file.filename)
@@ -85,6 +85,9 @@ async def _file_upload( my_file: UploadFile = File(...),
         content = await my_file.read()  # async read
         await out_file.write(content)  # async write
     
+    print(f'{file_text}')
+    print(f'program_type:{programmNr}')
+
     st = time.time()
     h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_text}')
     print('preprocessing done')
@@ -113,9 +116,9 @@ async def _file_upload( my_file: UploadFile = File(...),
     response_file = 'sample_output.png'
     print(f'elapsed time -> {time.time()-st}')
 
-    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'))
+    return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'),headers={"message": f"anomalous={bool(is_anomalous_left+is_anomalous_right)}"})
 
 fill_buffer()
 
-uvicorn.run(app, host="192.168.8.113", port=8000)
+uvicorn.run(app, host="192.168.60.1", port=8000)
 # uvicorn.run(app, port=8000)
