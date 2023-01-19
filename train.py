@@ -30,8 +30,8 @@ def get_args() -> Namespace:
         Namespace: List of arguments.
     """
     parser = ArgumentParser()
-    parser.add_argument("--model", type=str, default="padim", help="Name of the algorithm to train/test")
-    parser.add_argument("--config", type=str, required=False, help="Path to a model config file")
+    parser.add_argument("--model", type=str, default="cflow", help="Name of the algorithm to train/test")
+    parser.add_argument("--config", type=str, default="heat_anomaly/models/cflow/ir_image.yaml", help="Path to a model config file")
     parser.add_argument("--log-level", type=str, default="INFO", help="<DEBUG, INFO, WARNING, ERROR>")
 
     args = parser.parse_args()

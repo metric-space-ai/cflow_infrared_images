@@ -43,7 +43,7 @@ def crop_2_halves(filepath):
 	im1 = im_copy.crop((0,0,w//2,h))
 	im2 = im_copy.crop((w//2,0,w,h))
 	
-	dim_hr = ((w//2,h), (w//2,h))
+	dim_hr = ((w//2,h), (w//2,h)) 
 	
 	return np.array(im1), np.array(im2), dim_hr
 
@@ -149,6 +149,9 @@ async def create_upload_files(files: List[UploadFile] = File(...)):
     # -----------------------------
     anomaly1, anomaly2 = predictions1.pred_mask, predictions2.pred_mask
     is_anomalous_left, is_anomalous_right = False, False
+
+    print(predictions1.pred_score)
+    print(predictions2.pred_score)
 
     if anomaly1.max() > 0:
         is_anomalous_left = True

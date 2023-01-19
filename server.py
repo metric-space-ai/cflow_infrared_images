@@ -85,16 +85,20 @@ def get_heated_region(filepath):
 
 
 def crop_2_halves(filepath):
-	im = Image.open(filepath) # open the image file
-	im.seek(0) # getting the IR image
-	im_copy = im.copy()
-	w,h = im.size
-	im1 = im_copy.crop((0,0,w//2,h))
-	im2 = im_copy.crop((w//2,0,w,h))
-	
-	dim_hr = ((w//2,h), (w//2,h))
-	
-	return np.array(im1), np.array(im2), dim_hr
+    im = Image.open(filepath) # open the image file
+    im.seek(0) # getting the IR image
+    im_copy = im.copy()
+    
+    r,g,b = im_copy.split()
+    im_copy = Image.merge('RGB', (r, g, r))
+    
+    w,h = im_copy.size
+    im1 = im_copy.crop((0,0,w//2,h))
+    im2 = im_copy.crop((w//2,0,w,h))
+    
+    dim_hr = ((w//2,h), (w//2,h))
+    
+    return np.array(im1), np.array(im2), dim_hr
 
 def concat_result(im1, im2):
     dst = Image.new('RGB', (im1.width + im2.width, im1.height))
@@ -121,11 +125,9 @@ def fill_buffer():
 
     return True
 	
-# file_model = '/media/nvidia/ampkit/metric_space/anomalib/results/cflow/folder_old/weights/model-v1.ckpt'
-file_model = 'results/cflow/folder/weights/precon_heatmap_v2.ckpt'
+# file_model = 'precon_heatmap.ckpt'
+file_model = 'results/cflow/folder/weights/precon_heatmap.ckpt'
 inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', file_model)
-
-
 
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),
@@ -141,13 +143,16 @@ async def _file_upload( my_file: UploadFile = File(...),
     # print(f'program_type:{programmNr}')
 
     st = time.time()
-    # h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_text}')
+    h1,h2, dims = crop_2_halves(f'{IMAGEDIR}{file_text}')
 
-    h1,h2, dims = get_heated_region(f'{IMAGEDIR}{file_text}')
+    # h1,h2, dims = get_heated_region(f'{IMAGEDIR}{file_text}')
     print('preprocessing done')
     
     predictions1 = inferencer.predict(image=h1)
     predictions2 = inferencer.predict(image=h2)
+
+    print(predictions1.pred_score)
+    print(predictions2.pred_score)
 
     # checking if anomaly exists
     # -----------------------------

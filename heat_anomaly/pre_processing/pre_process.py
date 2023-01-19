@@ -82,13 +82,13 @@ def get_transforms(
     transforms: A.Compose
 
     if config is None and image_size is not None:
-        logger.warning("Transform configs has not been provided. Images will be normalized using ImageNet statistics.")
+        # logger.warning("Transform configs has not been provided. Images will be normalized using ImageNet statistics.")
 
         height, width = get_image_height_and_width(image_size)
         transforms = A.Compose(
             [
                 A.Resize(height=height, width=width, always_apply=True),
-                A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
+                A.Normalize(mean=(42.3339, 21.2317, 42.3339), std=(131.195, 79.8373, 131.195)),
                 ToTensorV2(),
             ]
         )

@@ -19,7 +19,7 @@ response = requests.post(
     files=files,
     data={'programmNr': "Hello", 'second': "World"}
 )
-path = '/home/nvidia/Documents/precon/precon_web_folder'
+path = 'precon_web_folder'
 
 if response.status_code == 200:
 	print('Yeah')
