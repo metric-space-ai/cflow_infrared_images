@@ -11,7 +11,7 @@ args = ap.parse_args()
 
 filename = args.image
 files = {'my_file': (filename, open(filename, 'rb'))}
-json = {'first': "Hello", 'second': "World"}
+json = {'programmNr': "Hello", 'second': "World"}
 
 response = requests.post(
     # 'http://192.168.8.113:8000/file',

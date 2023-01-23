@@ -89,8 +89,15 @@ def crop_2_halves(filepath):
     im.seek(0) # getting the IR image
     im_copy = im.copy()
     
+    # change to RGB image
+    im_copy = im_copy.convert('RGB')
     r,g,b = im_copy.split()
-    im_copy = Image.merge('RGB', (r, g, r))
+
+    b = np.array(b)
+    b[b==np.median(b)] = 0
+    b = Image.fromarray(b)
+
+    im_copy = Image.merge('RGB', (r,g,b))
     
     w,h = im_copy.size
     im1 = im_copy.crop((0,0,w//2,h))
@@ -126,7 +133,7 @@ def fill_buffer():
     return True
 	
 # file_model = 'precon_heatmap.ckpt'
-file_model = 'results/cflow/folder/weights/precon_heatmap.ckpt'
+file_model = 'results/cflow/folder/weights/model-v2.ckpt'
 inferencer = get_inferencer('./heat_anomaly/models/cflow/ir_image.yaml', file_model)
 
 @app.post("/file")
