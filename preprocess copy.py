@@ -1,4 +1,4 @@
-from PIL import Image, ImageStat
+from PIL import Image
 import numpy as np
 import glob
 import os
