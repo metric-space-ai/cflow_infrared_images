@@ -1,10 +1,9 @@
 
-clear all
 pkg load image
 
 %get folder of good images
 %datafolder = uigetdir('data','Wähle einen Ordner mit tiff Dateien');
-datafolder = '/media/ankit/ampkit/metric_space/precon_data/nio_part';
+datafolder = '/media/ankit/ampkit/metric_space/precon_data/testing';
 Files = dir(fullfile(datafolder, '*.png'));
 
 nio_dir = '/media/ankit/ampkit/metric_space/precon_data/nio'
@@ -26,7 +25,7 @@ for file_idx = 1:length(Files)
 
     % generate dimensions of the anomaly as circle
     minR=randi([2,4]);
-    maxR=minR+randi([20,30]);
+    maxR=minR+randi([3,5]);
     
     % search of a spot to place the anomaly
     Summe=0;
@@ -41,7 +40,7 @@ for file_idx = 1:length(Files)
     end
     
     % generate the granularity of the gradient of the anomaly
-    steps=randi([50,100]); 
+    steps=randi([20,50]); 
     radi = round(linspace(minR,maxR,steps));
     
     % generate the anomaly
@@ -52,19 +51,7 @@ for file_idx = 1:length(Files)
     end
     B=(recolor(B,I1));
     
-    % plots for debugging
-##    figure(1)
-##    subplot(2,2,1)
-##    image(I1)
-##    title('original')
-##    subplot(2,2,2)
-##    image(B)
-##    title('modified')
-##    subplot(2,2,4)
-##    image(circlePixels)
-##    colormap([0 0 0; 1 1 1]);
-##    title('mask')
-    num = 60
+    num = 0
     % store the results by increasing index.
     imwrite(B,strcat(nio_dir, '/abnormal_', num2str(num+file_idx), '.png'))
     imwrite(circlePixels.*1,strcat(nio_mask, '/abnormal_', num2str(num+file_idx), '.png'))

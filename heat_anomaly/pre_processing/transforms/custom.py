@@ -23,10 +23,10 @@ class Denormalize:
         warnings.warn("Denormalize is no longer used and will be deprecated in v0.4.0")
         # If no mean and std provided, assign ImageNet values.
         if mean is None:
-            mean = [0.485, 0.456, 0.406]
+            mean = [0, 0, 0]
 
         if std is None:
-            std = [0.229, 0.224, 0.225]
+            std = [1, 1, 1]
 
         self.mean = Tensor(mean)
         self.std = Tensor(std)

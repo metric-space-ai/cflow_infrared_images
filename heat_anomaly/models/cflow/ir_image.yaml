@@ -9,12 +9,12 @@ dataset:
   mask: /media/ankit/ampkit/metric_space/precon_data/nio_mask #optional
   extensions: null
   split_ratio: 0.2 # ratio of the normal images that will be used to create a test split
-  image_size: [288, 762]
-  train_batch_size: 16
-  test_batch_size: 16
-  inference_batch_size: 16
-  fiber_batch_size: 64
-  num_workers: 6
+  image_size: [205, 320]
+  train_batch_size: 8
+  test_batch_size: 8
+  inference_batch_size: 8
+  fiber_batch_size: 32
+  num_workers: 12
   transform_config:
     train: null
     val: null

@@ -1,120 +1,93 @@
 # import the necessary packages
-from matplotlib import pyplot as plt
-import numpy as np
-import imutils
-import glob
-import cv2
-
-from PIL import Image
-from sklearn.model_selection import train_test_split
-import shutil
 import os
+import sys
+import glob
+import shutil
+import pickle
+import argparse
 
-# change to RGB image
-def change_median_channel(im_copy):
-    r,g,b = im_copy.split()
-    
-    b = np.array(b)
-    b[b==np.median(b)] = 0
-    b = Image.fromarray(b)
-    
-    return Image.merge('RGB', (r,g,b))
+from sklearn.model_selection import train_test_split
 
-def crop_2_halves(filepath):
-	im = Image.open(filepath) # open the image file
-	im.seek(0) # getting the IR image
-	im_copy = im.copy()
+from ir_image_loader.preprocess_and_locate_image import preprocess_ir_image
 
-	w,h = im.size
-	im1 = im_copy.crop((0,0,w//2,h))
-	im2 = im_copy.crop((w//2,0,w,h))
-
-	return [im1, im2]
-
-def get_heated_region(imagePath, heated_templates):
-    '''
-    
-
-    Parameters
-    ----------
-    image : numpy array image with two 
-        DESCRIPTION.
-
-    Returns
-    -------
-    coordinates_heated_region : TYPE
-        DESCRIPTION.
-
-    '''
-    image_ = crop_2_halves(imagePath)
-    found = None
-    
-    new_im_ = []
-    
-    for im, temp in zip(image_, heated_templates):
-        template = cv2.imread(temp)
-        template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        template = cv2.Canny(template, 50, 200)
-        (tH, tW) = template.shape[:2]
-        # plt_imshow("Template", template)
-        
-        gray    = np.array(im.convert('L'))
-        image   = np.array(im)
-        
-        for scale in np.linspace(1, 1.0, 5)[::-1]:
-            resized = imutils.resize(gray, width = int(gray.shape[1] * scale))
-            r = gray.shape[1] / float(resized.shape[1])
-            
-            
-            if resized.shape[0] < tH or resized.shape[1] < tW:
-                break
-            
-            edged = cv2.Canny(resized, 50, 200)
-            result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
-            (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-            
-            if found is None or maxVal > found[0]:
-                found = (maxVal, maxLoc  , r)
-        
-        (_, maxLoc, r) = found
-        (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
-        (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
-        
-        image_heat_region = im.crop((startX, startY, endX, endY))
-        new_im_.append(change_median_channel(image_heat_region))
-        
-        
-        
-    return new_im_
-    
-    
-
-def process_image(filepath, heated_templates):
-    left_side, right_side = get_heated_region(filepath, heated_templates)
-    
-    return left_side, right_side
+from oct2py import octave
+octave.addpath(octave.genpath('octave_scripts'))
 
 
-image_files = glob.glob('/media/ankit/ampkit/metric_space/xxx/good/*.tiff')
+ap = argparse.ArgumentParser()
+
+ap.add_argument("-b", "--base_path", type=str, 
+                default= '/media/ankit/ampkit/metric_space/precon_data',
+                help="base folder path")
+
+ap.add_argument("-ri", "--raw_image_path", type=str, default= 'new_data',
+                help="path to newly acquired images")
+
+ap.add_argument("-io", "--io_path", type=str, default= 'io',
+                help="path to training images")
+
+ap.add_argument("-nio", "--nio_path", type=str, default= 'nio',
+                help="path to testing images")
+
+ap.add_argument("-dp", "--delete_previous", type=bool, default= False,
+                help="path to testing images")
+
+args = vars(ap.parse_args())
+
+
+image_files = glob.glob(f"{args['base_path']}/{args['raw_image_path']}/*.tiff")
+h1_template = pickle.load(open('ir_image_loader/h1_template.pkl', 'rb'))
+h2_template = pickle.load(open('ir_image_loader/h2_template.pkl', 'rb'))
+
 X_train, X_test = train_test_split(image_files, test_size=0.1, random_state=21)
 X_val, X_test = train_test_split(X_test, test_size=0.5, random_state=21)
 
-datasets = [("train", X_train, '/media/ankit/ampkit/metric_space/precon_data/io'),
-            ("val", X_test, '/media/ankit/ampkit/metric_space/precon_data/nio_part'),
-			("test", X_test, '/media/ankit/ampkit/metric_space/precon_data/io_test')
+datasets = [("train", X_train, f"{args['base_path']}/{args['io_path']}"),
+            ("val", X_test, f"{args['base_path']}/{args['io_path']}_test"),
+			("test", X_test, f"{args['base_path']}/{args['nio_path']}_pre_anomalous")
             ]
 
+# making the train, validation and testing split
 for (dType, keys, outputPath) in datasets:
+    if args['delete_previous']:
+        try:
+            shutil.rmtree(outputPath)
+        except:
+            pass
+    
     try:
-        shutil.rmtree(outputPath)
+        os.makedirs(outputPath)
     except:
         pass
         
-    os.makedirs(outputPath)
     for count, image_file in enumerate(keys):
+        
+        sys.stdout.write(f'\r[INFO]: {dType} - {count+1:04d}/{len(keys)}')
+    
         filename = os.path.basename(image_file)
-        h1, h2 = process_image(image_file, ["/media/ankit/ampkit/metric_space/precon_data/example_mask/left_heated_region.png",
-                                              '/media/ankit/ampkit/metric_space/precon_data/example_mask/right_heated_region.png'])
+        pir = preprocess_ir_image(image_file, [h1_template, h2_template])
+        
+        h1, h2 = pir.process_image()
         
         h1.save(f"{outputPath}/{filename.replace('.tiff', '_left.png')}")
         h2.save(f"{outputPath}/{filename.replace('.tiff', '_right.png')}")
+
+
+# creating the anomalies and storing the data
+# ----------------------------------------------
+nio_folders = [f"{args['base_path']}/{args['nio_path']}", f"{args['base_path']}/{args['nio_path']}_mask"]
+
+if args['delete_previous']:
+    for nio_f in nio_folders:
+        try:
+            shutil.rmtree(nio_f)
+        except:
+            pass
+
+for nio_f in nio_folders:
+    try:
+        os.makedirs(nio_f)
+    except:
+        pass
+
+octave.run('generate_anomalies.m')
