@@ -6,11 +6,12 @@ import shutil
 import pickle
 import argparse
 
-from sklearn.model_selection import train_test_split
-
-from ir_image_loader.preprocess_and_locate_image import preprocess_ir_image
 
 from oct2py import octave
+from sklearn.model_selection import train_test_split
+from ir_image_loader.preprocess_image import preprocess_ir_image
+
+
 octave.addpath(octave.genpath('octave_scripts'))
 
 
@@ -29,7 +30,7 @@ ap.add_argument("-io", "--io_path", type=str, default= 'io',
 ap.add_argument("-nio", "--nio_path", type=str, default= 'nio',
                 help="path to testing images")
 
-ap.add_argument("-dp", "--delete_previous", type=bool, default= False,
+ap.add_argument("-dp", "--delete_previous", type=bool, default= True,
                 help="path to testing images")
 
 args = vars(ap.parse_args())
@@ -71,6 +72,8 @@ for (dType, keys, outputPath) in datasets:
         
         h1.save(f"{outputPath}/{filename.replace('.tiff', '_left.png')}")
         h2.save(f"{outputPath}/{filename.replace('.tiff', '_right.png')}")
+        
+        
 
 
 # creating the anomalies and storing the data

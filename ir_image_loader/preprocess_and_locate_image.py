@@ -1,10 +1,8 @@
 # import the necessary packages
-import numpy as np
-import imutils
 import cv2
-
+import imutils
+import numpy as np
 from PIL import Image
-
 
 class preprocess_ir_image():
     def __init__(self, image_path, heated_templates):
@@ -19,11 +17,9 @@ class preprocess_ir_image():
             im = im[r.argmax():m-r[::-1].argmax(), c.argmax():n-c[::-1].argmax()]
         else:
             im = np.empty((0,0),dtype=bool)
-        
         return im
         
     def change_median_channel(self, im_copy):
-        
         r,g,b = im_copy.split()
         
         b = np.array(b)

@@ -2,18 +2,18 @@ dataset:
   name: folder #options: [mvtec, btech, folder]
   format: folder
   path: /media/ankit/ampkit/metric_space/precon_data
-  normal_dir: io # name of the folder containing normal images.
-  abnormal_dir: nio # name of the folder containing abnormal images.
-  normal_test_dir: io_test # name of the folder containing normal test images.
+  normal_dir: io/h2 # name of the folder containing normal images.
+  abnormal_dir: nio/h2 # name of the folder containing abnormal images.
+  normal_test_dir: io_test/h2 # name of the folder containing normal test images.
   task: segmentation # classification or segmentation
-  mask: /media/ankit/ampkit/metric_space/precon_data/nio_mask #optional
+  mask: /media/ankit/ampkit/metric_space/precon_data/nio_mask/h2 #optional
   extensions: null
   split_ratio: 0.2 # ratio of the normal images that will be used to create a test split
   image_size: [205, 294]
-  train_batch_size: 8
-  test_batch_size: 8
-  inference_batch_size: 8
-  fiber_batch_size: 32
+  train_batch_size: 16
+  test_batch_size: 16
+  inference_batch_size: 16
+  fiber_batch_size: 64
   num_workers: 12
   transform_config:
     train: null
@@ -69,7 +69,7 @@ visualization:
 
 project:
   seed: 0
-  path: ./results
+  path: ./results_right
 
 logging:
   logger: [] # options: [comet, tensorboard, wandb, csv] or combinations.
