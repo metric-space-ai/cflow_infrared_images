@@ -1,8 +1,5 @@
 """Tools for min-max normalization."""
 
-# Copyright (C) 2022 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
 from typing import Union
 
 import numpy as np

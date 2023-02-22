@@ -103,7 +103,7 @@ class Inferencer(ABC):
         Returns:
             np.ndarray: Image with segmentation mask superimposed.
         """
-        pred_mask = compute_mask(anomaly_map, 0.5)  # assumes predictions are normalized.
+        pred_mask = compute_mask(anomaly_map, 0.4)  # assumes predictions are normalized.
         image_height = meta_data["image_shape"][0]
         image_width = meta_data["image_shape"][1]
         pred_mask = cv2.resize(pred_mask, (image_width, image_height))

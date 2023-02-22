@@ -121,7 +121,7 @@ def get_configurable_parameters(
         )
 
     if config_path is None:
-        config_path = Path(f"anomalib/models/{model_name}/{config_filename}.{config_file_extension}")
+        config_path = Path(f"heat_anomaly/models/{model_name}/{config_filename}.{config_file_extension}")
 
     config = OmegaConf.load(config_path)
 

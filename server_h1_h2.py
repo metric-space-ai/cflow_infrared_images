@@ -2,7 +2,6 @@ from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.responses import FileResponse
 import os
 import time
-import cv2
 
 import aiofiles
 import uvicorn
@@ -16,7 +15,6 @@ from heat_anomaly.deploy import Inferencer
 from importlib import import_module
 from typing import Optional
 
-from heat_anomaly.config import get_configurable_parameters
 from ir_image_loader.preprocess_image import preprocess_ir_image
 
 
