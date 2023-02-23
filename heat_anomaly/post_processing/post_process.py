@@ -8,8 +8,6 @@ from skimage import morphology
 
 
 class ThresholdMethod(str, Enum):
-    """Threshold method to apply post-processing to the output predictions."""
-
     ADAPTIVE = "adaptive"
     MANUAL = "manual"
 
@@ -53,12 +51,10 @@ def add_label(
 
 
 def add_normal_label(image: np.ndarray, confidence: Optional[float] = None):
-    """Adds the normal label to the image."""
     return add_label(image, "normal", (225, 252, 134), confidence)
 
 
 def add_anomalous_label(image: np.ndarray, confidence: Optional[float] = None):
-    """Adds the anomalous label to the image."""
     return add_label(image, "anomalous", (255, 100, 100), confidence)
 
 

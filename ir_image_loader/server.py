@@ -40,18 +40,6 @@ def get_inferencer(config_path: Path, weight_path: Path, meta_data_path: Optiona
     return inferencer
 
 def get_heated_region(filepath):
-    '''
-    
-    Parameters
-    ----------
-    filepath : image file with .tif extension 
-        DESCRIPTION.
-    Returns
-    -------
-    boxed_region : the corners to get the accurate region
-        DESCRIPTION.
-        
-    '''
     # opening image and grayscale conversion
     # --------------------
     im = Image.open(filepath) # open the image file
