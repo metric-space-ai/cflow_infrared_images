@@ -21,7 +21,7 @@ def get_args() -> Namespace:
     """
     parser = ArgumentParser()
     parser.add_argument("--model", type=str, default="cflow", help="Name of the algorithm to train/test")
-    parser.add_argument("--config", type=str, default="heat_anomaly/models/cflow/ir_image_left.yaml", help="Path to a model config file")
+    parser.add_argument("--config", type=str, default="heat_anomaly/models/cflow/ir_image_h1.yaml", help="Path to a model config file")
     parser.add_argument("--log-level", type=str, default="INFO", help="<DEBUG, INFO, WARNING, ERROR>")
 
     args = parser.parse_args()

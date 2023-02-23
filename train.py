@@ -1,13 +1,3 @@
-"""Anomalib Traning Script.
-
-This script reads the name of the model or config file from command
-line, train/test the anomaly model to get quantitative and qualitative
-results.
-"""
-
-# Copyright (C) 2022 Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
 import logging
 import warnings
 from argparse import ArgumentParser, Namespace
