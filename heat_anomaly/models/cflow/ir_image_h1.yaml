@@ -68,12 +68,12 @@ visualization:
   mode: full # options: ["full", "simple"]
 
 project:
-  seed: 0
+  seed: 21
   path: /media/ankit/ampkit/metric_space/precon_data/h1/results
 
 logging:
-  logger: [] # options: [comet, tensorboard, wandb, csv] or combinations.
-  log_graph: false # Logs the model graph to respective logger.
+  logger: [tensorboard] # options: [comet, tensorboard, wandb, csv] or combinations.
+  log_graph: true # Logs the model graph to respective logger.
 
 optimization:
   export_mode: null #options: onnx, openvino
@@ -87,7 +87,7 @@ trainer:
   auto_scale_batch_size: false
   auto_select_gpus: false
   benchmark: false
-  check_val_every_n_epoch: 1
+  check_val_every_n_epoch: 5
   default_root_dir: null
   detect_anomaly: true
   deterministic: false
