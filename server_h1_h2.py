@@ -65,8 +65,8 @@ def fill_buffer():
 # file_model = 'precon_heatmap.ckpt'
 file_model_h1 = 'results_left/cflow/folder/weights/model.ckpt'
 file_model_h2 = 'results_right/cflow/folder/weights/model.ckpt'
-inferencer_h1 = get_inferencer('./heat_anomaly/models/cflow/ir_image_left.yaml', file_model_h1)
-inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_right.yaml', file_model_h2)
+inferencer_h1 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h1.yaml', file_model_h1)
+inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h2.yaml', file_model_h2)
 
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),

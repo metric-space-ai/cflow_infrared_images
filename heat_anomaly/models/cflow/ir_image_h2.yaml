@@ -8,13 +8,13 @@ dataset:
   task: segmentation # classification or segmentation
   mask: /media/ankit/ampkit/metric_space/precon_data/h2/nio_mask #optional
   extensions: null
-  split_ratio: 0.2 # ratio of the normal images that will be used to create a test split
+  split_ratio: 0.1 # ratio of the normal images that will be used to create a test split
   image_size: [205, 294]
-  train_batch_size: 16
-  test_batch_size: 16
-  inference_batch_size: 16
+  train_batch_size: 32
+  test_batch_size: 1
+  inference_batch_size: 1
   fiber_batch_size: 64
-  num_workers: 12
+  num_workers: 4
   transform_config:
     train: null
     val: null
@@ -68,12 +68,12 @@ visualization:
   mode: full # options: ["full", "simple"]
 
 project:
-  seed: 0
-  path: ./results_right
+  seed: 21
+  path: /media/ankit/ampkit/metric_space/precon_data/h2/results
 
 logging:
-  logger: [] # options: [comet, tensorboard, wandb, csv] or combinations.
-  log_graph: false # Logs the model graph to respective logger.
+  logger: [tensorboard] # options: [comet, tensorboard, wandb, csv] or combinations.
+  log_graph: true # Logs the model graph to respective logger.
 
 optimization:
   export_mode: null #options: onnx, openvino
@@ -105,7 +105,7 @@ trainer:
   limit_val_batches: 1.0
   log_every_n_steps: 1
   log_gpu_memory: null
-  max_epochs: 50
+  max_epochs: 10
   max_steps: -1
   max_time: null
   min_epochs: null

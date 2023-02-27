@@ -10,7 +10,7 @@ from heat_anomaly.models import get_model
 from heat_anomaly.utils.callbacks import LoadModelCallback, get_callbacks
 from heat_anomaly.utils.loggers import configure_logger, get_experiment_logger
 
-logger = logging.getLogger("anomalib")
+logger = logging.getLogger("heat_anomaly")
 
 
 def get_args() -> Namespace:
@@ -21,7 +21,7 @@ def get_args() -> Namespace:
     """
     parser = ArgumentParser()
     parser.add_argument("--model", type=str, default="cflow", help="Name of the algorithm to train/test")
-    parser.add_argument("--config", type=str, default="heat_anomaly/models/cflow/ir_image.yaml", help="Path to a model config file")
+    parser.add_argument("--config", type=str, default="heat_anomaly/models/cflow/ir_image_h1.yaml", help="Path to a model config file")
     parser.add_argument("--log-level", type=str, default="INFO", help="<DEBUG, INFO, WARNING, ERROR>")
 
     args = parser.parse_args()
