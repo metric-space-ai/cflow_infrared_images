@@ -50,11 +50,10 @@ def concat_result_top_down(im1, im2):
     return dst
 
 def fill_buffer():
-    temp_image = Image.open('cache_input.tiff')
-
-    w,h = temp_image.size
-    h1 = temp_image.crop((0,0,w//2,h))
-    h2 = temp_image.crop((w//2,0,w,h))
+    temp_image = Image.open('ir_image_loader/cache_input.tiff')
+    
+    pir = preprocess_ir_image(temp_image)
+    h1, h2 = pir.process_image()
     print('preprocessing done')
     
     inferencer_h1.predict(image=np.array(h1))
