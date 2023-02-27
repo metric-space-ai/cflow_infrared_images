@@ -23,10 +23,6 @@ ap.add_argument("-b", "--base_path", type=str,
                 default= '/media/ankit/ampkit/metric_space/precon_data',
                 help="base folder path")
 
-ap.add_argument("-s", "--is_subfolder", type=bool, 
-                default= False,
-                help="Does the raw folder path have subfolders ?")
-
 ap.add_argument("-ri", "--raw_image_path", type=str, default= 'new_data',
                 help="path to newly acquired images")
 
@@ -43,9 +39,8 @@ args = vars(ap.parse_args())
 
 # getting all the tiff files from the path
 # ---------------------------------------------
-if args["is_subfolder"]:
-    image_files = glob.glob(f"{args['base_path']}/{args['raw_image_path']}/**/*.tiff")
-else:
+image_files = glob.glob(f"{args['base_path']}/{args['raw_image_path']}/**/*.tiff")
+if len(image_files) == 0:
     image_files = glob.glob(f"{args['base_path']}/{args['raw_image_path']}/*.tiff")
 
 # forming 2 paths for two halves
