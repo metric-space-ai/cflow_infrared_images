@@ -14,7 +14,7 @@ dataset:
   test_batch_size: 1
   inference_batch_size: 1
   fiber_batch_size: 64
-  num_workers: 4
+  num_workers: 2
   transform_config:
     train: null
     val: null
