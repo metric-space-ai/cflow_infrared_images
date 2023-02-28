@@ -1,5 +1,5 @@
 dataset:
-  name: folder #options: [mvtec, btech, folder]
+  name: precon #options: [mvtec, btech, folder]
   format: folder
   path: /media/ankit/ampkit/metric_space/precon_data/h2
   normal_dir: io # name of the folder containing normal images.
