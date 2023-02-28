@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, Union
 
 import albumentations as A
+import numpy.core.multiarray
 import cv2
 import numpy as np
 from pandas.core.frame import DataFrame
