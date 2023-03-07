@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 
 from PIL import Image
+from matplotlib import pyplot as plt
 
 from heat_anomaly.deploy import Inferencer
 from importlib import import_module
@@ -60,10 +61,17 @@ def fill_buffer():
     inferencer_h2.predict(image=np.array(h2))
 
     return True
+
+def get_box_plot_data(bp):
+    
+    upper_quartile = bp['boxes'][0].get_ydata()[2]
+    lower_quartile = bp['boxes'][0].get_ydata()[1]
+
+    return upper_quartile - lower_quartile
 	
 # file_model = 'precon_heatmap.ckpt'
 file_model_h1 = 'results_left/cflow/folder/weights/model.ckpt'
-file_model_h2 = 'results_right/cflow/folder/weights/model.ckpt'
+file_model_h2 = 'results_right_debug/cflow/folder/weights/model.ckpt'
 inferencer_h1 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h1.yaml', file_model_h1)
 inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h2.yaml', file_model_h2)
 
@@ -98,9 +106,19 @@ async def _file_upload( my_file: UploadFile = File(...),
     anomaly_h2 = predictions_h2.pred_mask
     is_anomalous = False
 
+    anomaly_map_1 = predictions_h1.anomaly_map
+    anomaly_map_2 = predictions_h2.anomaly_map
+
+    bp1 =plt.boxplot(anomaly_map_1.flatten())
+    bp2 =plt.boxplot(anomaly_map_2.flatten())
+
     if anomaly_h1.max() > 0 or anomaly_h2.max():
         is_anomalous = True
     print(f"message: anomalous:{bool(is_anomalous)}")
+
+    if not is_anomalous:
+        if get_box_plot_data(bp1) > 0.1 or get_box_plot_data(bp2) > 0.1:
+            is_anomalous = True
     
     print('predictions generated')
     res_image1  = concat_result(Image.fromarray(predictions_h1.segmentations).resize(h1.size), Image.fromarray(predictions_h2.segmentations).resize(h1.size))

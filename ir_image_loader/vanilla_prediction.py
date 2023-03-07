@@ -64,8 +64,8 @@ inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h2.yaml', f
 st = time.time()
 
 #preprocess_image
-pir = preprocess_ir_image(args.image)
-h1, h2 = pir.process_image()
+pir     = preprocess_ir_image(args.image)
+h1, h2  = pir.process_image()
 print('preprocessing done')
 
 predictions_h1 = inferencer_h1.predict(image=np.array(h1))

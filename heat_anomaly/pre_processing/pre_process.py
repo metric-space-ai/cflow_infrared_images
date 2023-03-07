@@ -26,8 +26,6 @@ def get_transforms(
     transforms: A.Compose
 
     if config is None and image_size is not None:
-        logger.warning("Transform configs has not been provided. Images will be normalized using ImageNet statistics.")
-
         height, width = get_image_height_and_width(image_size)
         transforms = A.Compose(
             [
