@@ -1,12 +1,12 @@
 dataset:
   name: precon #options: [mvtec, btech, folder]
   format: folder
-  path: /media/ankit/ampkit/metric_space/precon_data/h1
+  path: /home/nvidia/Documents/metric_space/precon_data/h1
   normal_dir: io # name of the folder containing normal images.
   abnormal_dir: nio # name of the folder containing abnormal images.
   normal_test_dir: io_test # name of the folder containing normal test images.
   task: segmentation # classification or segmentation
-  mask: /media/ankit/ampkit/metric_space/precon_data/h1/nio_mask #optional
+  mask: /home/nvidia/Documents/metric_space/precon_data/h1/nio_mask #optional
   extensions: null
   split_ratio: 0.1 # ratio of the normal images that will be used to create a test split
   image_size: [205, 318]
@@ -69,7 +69,7 @@ visualization:
 
 project:
   seed: 21
-  path: /media/ankit/ampkit/metric_space/precon_data/h1/results
+  path: /home/nvidia/Documents/metric_space/precon_data/h1/results
 
 logging:
   logger: [tensorboard] # options: [comet, tensorboard, wandb, csv] or combinations.

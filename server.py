@@ -7,15 +7,13 @@ import aiofiles
 import uvicorn
 
 import numpy as np
-from pathlib import Path
 
 from PIL import Image
-from matplotlib import pyplot as plt
+from pathlib import Path
+from typing import Optional
+from importlib import import_module
 
 from heat_anomaly.deploy import Inferencer
-from importlib import import_module
-from typing import Optional
-
 from ir_image_loader.preprocess_image import preprocess_ir_image
 
 
@@ -29,8 +27,6 @@ except:
 # definintion to load the model
 def get_inferencer(config_path: Path, weight_path: Path, meta_data_path: Optional[Path] = None) -> Inferencer:
 
-    # Get the inferencer. We use .ckpt extension for Torch models and (onnx, bin)
-    # for the openvino models.
     inferencer: Inferencer
     module = import_module("heat_anomaly.deploy")
     torch_inferencer = getattr(module, "TorchInferencer")
@@ -51,7 +47,7 @@ def concat_result_top_down(im1, im2):
     return dst
 
 def fill_buffer():
-    temp_image = Image.open('ir_image_loader/cache_input.tiff')
+    temp_image = 'ir_image_loader/cache_input.tiff'
     
     pir = preprocess_ir_image(temp_image)
     h1, h2 = pir.process_image()
@@ -64,16 +60,20 @@ def fill_buffer():
 
 def get_box_plot_data(bp):
     
-    upper_quartile = bp['boxes'][0].get_ydata()[2]
-    lower_quartile = bp['boxes'][0].get_ydata()[1]
-
+    upper_quartile = np.percentile(bp, 75)
+    lower_quartile = np.percentile(bp, 25)
+    median = np.percentile(bp, 50)
+    
+    if median < 0.3:
+        return 0
+    
     return upper_quartile - lower_quartile
 	
 # file_model = 'precon_heatmap.ckpt'
-file_model_h1 = 'results_left/cflow/folder/weights/model.ckpt'
-file_model_h2 = 'results_right_debug/cflow/folder/weights/model.ckpt'
-inferencer_h1 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h1.yaml', file_model_h1)
-inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h2.yaml', file_model_h2)
+file_model_h1 = 'weights/model_h1.ckpt'
+file_model_h2 = 'weights/model_h2.ckpt'
+inferencer_h1 = get_inferencer('yaml/ir_image_h1.yaml', file_model_h1)
+inferencer_h2 = get_inferencer('yaml/ir_image_h2.yaml', file_model_h2)
 
 @app.post("/file")
 async def _file_upload( my_file: UploadFile = File(...),
@@ -86,49 +86,62 @@ async def _file_upload( my_file: UploadFile = File(...),
         await out_file.write(content)  # async write
     
     print(f'{file_text}')
-    # print(f'program_type:{programmNr}')
-
-    st = time.time()
-
-    #preprocess_image
-    pir = preprocess_ir_image(f'{IMAGEDIR}{file_text}')
-    h1, h2 = pir.process_image()
-    print('preprocessing done')
+    print(f'program_type:{programmNr}')
     
-    predictions_h1 = inferencer_h1.predict(image=np.array(h1))
-    predictions_h2 = inferencer_h2.predict(image=np.array(h2))
+    st = time.time()
+    try:
 
-    print(predictions_h1.pred_score, predictions_h2.pred_score)
+        #preprocess_image
+        pir = preprocess_ir_image(f'{IMAGEDIR}{file_text}')
+        h1, h2 = pir.process_image()
+        print('preprocessing done')
+        
+        predictions_h1 = inferencer_h1.predict(image=np.array(h1))
+        predictions_h2 = inferencer_h2.predict(image=np.array(h2))
 
-    # checking if anomaly exists
-    # -----------------------------
-    anomaly_h1 = predictions_h1.pred_mask
-    anomaly_h2 = predictions_h2.pred_mask
-    is_anomalous = False
+        print(predictions_h1.pred_score, predictions_h2.pred_score)
 
-    anomaly_map_1 = predictions_h1.anomaly_map
-    anomaly_map_2 = predictions_h2.anomaly_map
+        # checking if anomaly exists
+        # -----------------------------
+        anomaly_h1 = predictions_h1.pred_mask
+        anomaly_h2 = predictions_h2.pred_mask
+        is_anomalous = False
 
-    bp1 =plt.boxplot(anomaly_map_1.flatten())
-    bp2 =plt.boxplot(anomaly_map_2.flatten())
+        anomaly_map_1 = predictions_h1.anomaly_map
+        anomaly_map_2 = predictions_h2.anomaly_map
 
-    if anomaly_h1.max() > 0 or anomaly_h2.max():
-        is_anomalous = True
-    print(f"message: anomalous:{bool(is_anomalous)}")
+        if anomaly_h1.max() > 0 or anomaly_h2.max()>0:
+            is_anomalous = True
+
+        if not is_anomalous:
+            bp1 = get_box_plot_data(anomaly_map_1.flatten())
+            bp2 = get_box_plot_data(anomaly_map_2.flatten())
+            if get_box_plot_data(bp1) > 0.1 or get_box_plot_data(bp2) > 0.1:
+                is_anomalous = True
+            print(get_box_plot_data(bp1), get_box_plot_data(bp2))
+        
+        print(f"message: anomalous = {bool(is_anomalous)}")
+        
+        print('predictions generated')
+        res_image1  = concat_result(Image.fromarray(predictions_h1.segmentations).resize(h1.size), Image.fromarray(predictions_h2.segmentations).resize(h1.size))
+        res_image2  = concat_result(Image.fromarray(predictions_h1.heat_map).resize(h1.size), Image.fromarray(predictions_h2.heat_map).resize(h1.size))
+        res_image   = concat_result_top_down(res_image1, res_image2)
+        
+        print('heated regions merged')
+        res_image.save('sample_output.png')
+        response_file = 'sample_output.png'
+        print(f'elapsed time -> {time.time()-st}')
+    
+    except:
+        im = Image.open(f'{IMAGEDIR}{file_text}')
+        im.seek(0)
+        im.save('sample_output.png')
+
+        print(f'elapsed time -> {time.time()-st}')
+        return FileResponse('sample_output.png', media_type="image/png", filename=file_text.replace('.tiff','.png'),headers={"message": f"anomalous=BAD_FILE"})
 
     if not is_anomalous:
-        if get_box_plot_data(bp1) > 0.1 or get_box_plot_data(bp2) > 0.1:
-            is_anomalous = True
-    
-    print('predictions generated')
-    res_image1  = concat_result(Image.fromarray(predictions_h1.segmentations).resize(h1.size), Image.fromarray(predictions_h2.segmentations).resize(h1.size))
-    res_image2  = concat_result(Image.fromarray(predictions_h1.heat_map).resize(h1.size), Image.fromarray(predictions_h2.heat_map).resize(h1.size))
-    res_image   = concat_result_top_down(res_image1, res_image2)
-    
-    print('heated regions merged')
-    res_image.save('sample_output.png')
-    response_file = 'sample_output.png'
-    print(f'elapsed time -> {time.time()-st}')
+        os.remove(f'{IMAGEDIR}{file_text}')
 
     return FileResponse(response_file, media_type="image/png", filename=file_text.replace('.tiff','.png'),headers={"message": f"anomalous={bool(is_anomalous)}"})
 

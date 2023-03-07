@@ -61,7 +61,7 @@ class preprocess_ir_image():
         new_im_ = []
         
         for im in image_:
-            new_im_.append(self.change_blue_channel(im))                        
+            new_im_.append(self.change_median_channel(im))                        
         return new_im_
 
     # process the image
