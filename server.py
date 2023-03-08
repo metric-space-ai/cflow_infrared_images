@@ -51,10 +51,11 @@ def fill_buffer():
     
     pir = preprocess_ir_image(temp_image)
     h1, h2 = pir.process_image()
-    print('preprocessing done')
     
     inferencer_h1.predict(image=np.array(h1))
     inferencer_h2.predict(image=np.array(h2))
+
+    print('buffer filled')
 
     return True
 
@@ -63,8 +64,11 @@ def get_box_plot_data(bp):
     upper_quartile = np.percentile(bp, 75)
     lower_quartile = np.percentile(bp, 25)
     median = np.percentile(bp, 50)
+
+    print(upper_quartile, lower_quartile, median)
     
     if median < 0.3:
+
         return 0
     
     return upper_quartile - lower_quartile
@@ -118,7 +122,7 @@ async def _file_upload( my_file: UploadFile = File(...),
             bp2 = get_box_plot_data(anomaly_map_2.flatten())
             if get_box_plot_data(bp1) > 0.1 or get_box_plot_data(bp2) > 0.1:
                 is_anomalous = True
-            print(get_box_plot_data(bp1), get_box_plot_data(bp2))
+            
         
         print(f"message: anomalous = {bool(is_anomalous)}")
         
