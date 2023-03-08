@@ -1,5 +1,5 @@
 # Byte-compiled / optimized / DLL files
-network_files/
+sample_data/
 __pycache__/
 *.py[cod]
 *$py.class
