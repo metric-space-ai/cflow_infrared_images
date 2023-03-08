@@ -1,6 +1,7 @@
 import os
 import glob
 import time
+import pickle
 import numpy as np
 
 from PIL import Image
@@ -14,7 +15,7 @@ from ir_image_loader.preprocess_image import preprocess_ir_image
 def get_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument("--base_path", type=str, 
-                        default='/media/ankit/ampkit/metric_space/precon_data/Datenpool_HGS', 
+                        default='/media/ankit/ampkit/metric_space/precon_data/new_data', 
                         help="Path to image(s) to infer.")
     
     parser.add_argument("--res_path", type=str, 
@@ -53,19 +54,28 @@ def concat_result_top_down(im1, im2):
     dst.paste(im2, (0, im1.height))
     return dst
 
-file_model_h1 = 'results_left/cflow/folder/weights/model.ckpt'
-file_model_h2 = 'results_right/cflow/folder/weights/model.ckpt'
-inferencer_h1 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h1.yaml', file_model_h1)
-inferencer_h2 = get_inferencer('./heat_anomaly/models/cflow/ir_image_h2.yaml', file_model_h2)	
+file_model_h1 = 'weights/model_h1.ckpt'
+file_model_h2 = 'weights/model_h2.ckpt'
+inferencer_h1 = get_inferencer('yaml/ir_image_h1.yaml', file_model_h1)
+inferencer_h2 = get_inferencer('yaml/ir_image_h2.yaml', file_model_h2)	
 
 # creating the model once
 st = time.time()
 
-all_image = sorted(glob.glob(f'{args.base_path}/**/*.tiff'))
+def get_box_plot_data(bp):
+    
+    upper_quartile = np.percentile(bp, 75)
+    lower_quartile = np.percentile(bp, 25)
+    median = np.percentile(bp, 50)
 
+    return upper_quartile - lower_quartile, median
+
+all_image = sorted(glob.glob(f'{args.base_path}/*.tiff'))
+
+value_dict = {}
 for count_ai, ai in enumerate(all_image):
     print(f'{count_ai+1:03d}:{os.path.basename(ai)}')
-
+    value_dict[os.path.basename(ai)] = {}
     try:
         #preprocess_image
         pir     = preprocess_ir_image(ai)
@@ -82,6 +92,15 @@ for count_ai, ai in enumerate(all_image):
         anomaly_h1 = predictions_h1.pred_mask
         anomaly_h2 = predictions_h2.pred_mask
         is_anomalous = False
+
+        anomaly_map_1 = predictions_h1.anomaly_map
+        anomaly_map_2 = predictions_h2.anomaly_map
+
+        quart_diff_h1, median_h1 = get_box_plot_data(anomaly_map_1.flatten())
+        quart_diff_h2, median_h2 = get_box_plot_data(anomaly_map_2.flatten())
+
+        value_dict[os.path.basename(ai)] = {'median_h1': median_h1, 'interquartile_diff_h1': quart_diff_h1,
+                                            'median_h2': median_h2, 'interquartile_diff_h2': quart_diff_h2}
 
         if anomaly_h1.max() > 0 or anomaly_h2.max():
             is_anomalous = True
@@ -102,3 +121,4 @@ for count_ai, ai in enumerate(all_image):
         pass
 
 print(time.time() - st)
+pickle.dump(open('dict_threshold.ms', 'wb'), value_dict)

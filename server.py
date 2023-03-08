@@ -120,7 +120,7 @@ async def _file_upload( my_file: UploadFile = File(...),
         if not is_anomalous:
             bp1 = get_box_plot_data(anomaly_map_1.flatten())
             bp2 = get_box_plot_data(anomaly_map_2.flatten())
-            if get_box_plot_data(bp1) > 0.1 or get_box_plot_data(bp2) > 0.1:
+            if get_box_plot_data(bp1) > 0.145 or get_box_plot_data(bp2) > 0.14:
                 is_anomalous = True
             
         
